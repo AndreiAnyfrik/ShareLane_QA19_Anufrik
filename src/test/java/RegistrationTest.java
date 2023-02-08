@@ -1,126 +1,183 @@
-import com.github.javafaker.Faker;
+
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.testng.Assert;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-public class RegistrationTest {
-    //SHARELANE-4  registration with only required fields
-    @Test
-    public void onlyRequiredFields() {
-        System.setProperty("webdriver.chrome.driver", "src/test/resources/chromedriver.exe");
-        WebDriver driver = new ChromeDriver();
-        driver.get("https://www.sharelane.com/cgi-bin/register.py?page=1&zip_code=55555");
+public class RegistrationTest extends RegistrationPage {
 
-        WebElement firstNameInput = driver.findElement(By.name("first_name"));
-        firstNameInput.sendKeys("Andrei");
-        WebElement emailInput = driver.findElement(By.name("email"));
-        emailInput.sendKeys("ad@mail.ru");
-        WebElement passwordInput = driver.findElement(By.name("password1"));
-        passwordInput.sendKeys("1234");
-        WebElement confirmPasswordInput = driver.findElement(By.name("password2"));
-        confirmPasswordInput.sendKeys("1234");
-        driver.findElement(By.cssSelector("input[value='Register']")).click();
+    private static final String EMPTY_STRING = "";
+    private static final String SPACE = " ";
 
-        WebElement successRegistrationMessage = driver.findElement(By.xpath("//span[text( )= 'Account is created!']"));
-        Assert.assertTrue(successRegistrationMessage.isDisplayed(), "New page don't opened");
-        driver.quit();
-    }
-    @Test
-    public void allFields() {
-        System.setProperty("webdriver.chrome.driver", "src/test/resources/chromedriver.exe");
-        WebDriver driver = new ChromeDriver();
-        driver.get("https://www.sharelane.com/cgi-bin/register.py?page=1&zip_code=55555");
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String password;
+    private String confirmPassword;
+    private String zipCode;
 
-        WebElement firstNameInput = driver.findElement(By.name("first_name"));
-        firstNameInput.sendKeys("Andrei");
-        WebElement lastNameInput = driver.findElement(By.name("last_name"));
-        lastNameInput.sendKeys("Anufrik");
-        WebElement emailInput = driver.findElement(By.name("email"));
-        emailInput.sendKeys("ad@mail.ru");
-        WebElement passwordInput = driver.findElement(By.name("password1"));
-        passwordInput.sendKeys("1234");
-        WebElement confirmPasswordInput = driver.findElement(By.name("password2"));
-        confirmPasswordInput.sendKeys("1234");
-        driver.findElement(By.cssSelector("input[value='Register']")).click();
-
-        WebElement successRegistrationMessage = driver.findElement(By.xpath("//span[text( )= 'Account is created!']"));
-        Assert.assertTrue(successRegistrationMessage.isDisplayed(), "New page don't opened");
-        driver.quit();
-    }
-    @Test
-    public void withoutPassword() {
-        System.setProperty("webdriver.chrome.driver", "src/test/resources/chromedriver.exe");
-        WebDriver driver = new ChromeDriver();
-        driver.get("https://www.sharelane.com/cgi-bin/register.py?page=1&zip_code=55555");
-
-        WebElement firstNameInput = driver.findElement(By.name("first_name"));
-        firstNameInput.sendKeys("Andrei");
-        WebElement lastNameInput = driver.findElement(By.name("last_name"));
-        lastNameInput.sendKeys("Anufrik");
-        WebElement emailInput = driver.findElement(By.name("email"));
-        emailInput.sendKeys("ad@mail.ru");
-        WebElement passwordInput = driver.findElement(By.name("password1"));
-        passwordInput.sendKeys("");
-        WebElement confirmPasswordInput = driver.findElement(By.name("password2"));
-        confirmPasswordInput.sendKeys("1234");
-        driver.findElement(By.cssSelector("input[value='Register']")).click();
-
-        WebElement errorRegistrationMessage = driver.findElement(By.xpath("//span[contains(text(), 'invalid data')]"));
-        Assert.assertTrue(errorRegistrationMessage.isDisplayed(),"New page don't opened");
-        Assert.assertEquals(errorRegistrationMessage.getText(),"Oops, error on page. Some of your fields have " +
-                "invalid data or email was previously used","Check text");
-        driver.quit();
+    @BeforeMethod(alwaysRun = true)
+    public void setUp() {
+        firstName = faker.name().firstName();
+        lastName = faker.name().lastName();
+        email = faker.internet().emailAddress();
+        password = faker.internet().password();
+        confirmPassword = password;
+        zipCode = "12345";
+        openRegistrationForm(zipCode);
+        WebElement registerBtn = driver.findElement(By.xpath(REGISTER_BTN));
+        Assert.assertTrue(registerBtn.isDisplayed());
     }
 
     @Test
-    public void withoutFirstName() {
-        System.setProperty("webdriver.chrome.driver", "src/test/resources/chromedriver.exe");
-        WebDriver driver = new ChromeDriver();
-        driver.get("https://www.sharelane.com/cgi-bin/register.py?page=1&zip_code=55555");
+    public void checkSuccessfulRegistrationWithAllValidFields() {
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifySuccessfulRegistrationMessage();
+    }
 
-        WebElement firstNameInput = driver.findElement(By.name("first_name"));
-        firstNameInput.sendKeys("");
-        WebElement lastNameInput = driver.findElement(By.name("last_name"));
-        lastNameInput.sendKeys("Anufrik");
-        WebElement emailInput = driver.findElement(By.name("email"));
-        emailInput.sendKeys("ad@mail.ru");
-        WebElement passwordInput = driver.findElement(By.name("password1"));
-        passwordInput.sendKeys("1234");
-        WebElement confirmPasswordInput = driver.findElement(By.name("password2"));
-        confirmPasswordInput.sendKeys("1234");
-        driver.findElement(By.cssSelector("input[value='Register']")).click();
+    @Test
+    public void checkUnsuccessfulRegistrationWithEmptyFirstName() {
+        firstName = EMPTY_STRING;
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
 
-        WebElement errorRegistrationMessage = driver.findElement(By.xpath("//span[contains(text(), 'invalid data')]"));
-        Assert.assertTrue(errorRegistrationMessage.isDisplayed(),"New page don't opened");
-        Assert.assertEquals(errorRegistrationMessage.getText(),"Oops, error on page. Some of your fields have " +
-                "invalid data or email was previously used","Check text");
+    @Test
+    public void checkUnsuccessfulRegistrationWithEmptyLastName() {
+        lastName = EMPTY_STRING;
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWithEmptyEmail() {
+        email = EMPTY_STRING;
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWithEmptyPassword() {
+        password = EMPTY_STRING;
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWithEmptyConfirmPassword() {
+        confirmPassword = EMPTY_STRING;
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWithSpaceBeforeTextInFirstName() {
+        firstName = SPACE + firstName;
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWithSpaceBeforeTextInLastName() {
+        lastName = SPACE + lastName;
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWithSpaceBeforeTextInEmail() {
+        email = SPACE + email;
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWithSpaceBeforeTextInPassword() {
+        password = SPACE + password;
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWithSpaceBeforeTextInConfirmPassword() {
+        confirmPassword = SPACE + confirmPassword;
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWithEmailWithoutATAndDomain() {
+        fillRegistrationForm(firstName, lastName, getEmailWithoutATAndDomain(), password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWithSpecSymbolsInEmail() {
+        fillRegistrationForm(firstName, lastName, getEmailWithSpecialCharacters(), password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWithMismatchPasswordAndConfirmPassword() {
+        confirmPassword = faker.internet().password();
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWhenPasswordEqualsEmail() {
+        fillRegistrationForm(firstName, lastName, email, email, email);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @Test
+    public void checkUnsuccessfulRegistrationWhenUserIsNotUnique() {
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        driver.navigate().back();
+        clearAllRegistrationFields();
+        fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
+        clickRegister();
+        verifyUnsuccessfulRegistrationMessage();
+    }
+
+    @AfterTest()
+    public void tearDown() {
         driver.quit();
     }
-    @Test
-    public void withoutEmail() {
-        System.setProperty("webdriver.chrome.driver", "src/test/resources/chromedriver.exe");
-        WebDriver driver = new ChromeDriver();
-        driver.get("https://www.sharelane.com/cgi-bin/register.py?page=1&zip_code=55555");
 
-        WebElement firstNameInput = driver.findElement(By.name("first_name"));
-        firstNameInput.sendKeys("Andrei");
-        WebElement lastNameInput = driver.findElement(By.name("last_name"));
-        lastNameInput.sendKeys("Anufrik");
-        WebElement emailInput = driver.findElement(By.name("email"));
-        emailInput.sendKeys("");
-        WebElement passwordInput = driver.findElement(By.name("password1"));
-        passwordInput.sendKeys("1234");
-        WebElement confirmPasswordInput = driver.findElement(By.name("password2"));
-        confirmPasswordInput.sendKeys("1234");
-        driver.findElement(By.cssSelector("input[value='Register']")).click();
+    private String getEmailWithoutATAndDomain() {
+        return email.replaceAll("@.*", "");
+    }
 
-        WebElement errorRegistrationMessage = driver.findElement(By.xpath("//span[contains(text(), 'invalid data')]"));
-        Assert.assertTrue(errorRegistrationMessage.isDisplayed(),"New page don't opened");
-        Assert.assertEquals(errorRegistrationMessage.getText(),"Oops, error on page. Some of your fields have " +
-                "invalid data or email was previously used","Check text");
-        driver.quit();
+    private String getEmailWithSpecialCharacters() {
+        return "?/*" + email;
+    }
+
+    private void verifySuccessfulRegistrationMessage() {
+        String actualMsg = getRegistrationStatusMessage();
+        Assert.assertEquals(actualMsg, SUCCESSFUL_REGISTRATION_MSG, "Registration should be done");
+    }
+
+    private void verifyUnsuccessfulRegistrationMessage() {
+        String actualMsg = getRegistrationStatusMessage();
+        Assert.assertEquals(actualMsg, UNSUCCESSFUL_REGISTRATION_MSG, "Registration shouldn't be done");
     }
 }
