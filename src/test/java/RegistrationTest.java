@@ -40,7 +40,6 @@ public class RegistrationTest extends RegistrationPage {
 
     @Test
     public void checkUnsuccessfulRegistrationWithEmptyFirstName() {
-        firstName = EMPTY_STRING;
         fillRegistrationForm(firstName, lastName, email, password, confirmPassword);
         clickRegister();
         verifyUnsuccessfulRegistrationMessage();
